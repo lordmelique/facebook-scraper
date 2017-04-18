@@ -315,17 +315,29 @@ var FbScraper = function (config) {
         return new Promise(function (resolve, reject) {
             var chain = new _this.Chain();
             var container = [];
-            comments.map(function (comment) {
-                chain = chain.then(function () {
-                    return new Promise(function (resolve, reject) {
-                        _this.getComment(comment.id).then(function (data) {
-                            container.push(data);
-                            resolve();
-                        }).catch(reject)
-                    });
-                })
-            });
-
+            var j = 0;
+            for( var i = 0; i < comments.length; i++ ){
+                var words = comments[i].message.split(" ").filter(function (i) {
+                    return i != "";
+                });
+                if( words.length <= 3 ){
+                    comments.splice(i,1);
+                    i--;
+                }else{
+                    var comment = comments[i];
+                    (function (comment) {
+                        j++;
+                        chain = chain.then(function () {
+                            return new Promise(function (resolve, reject) {
+                                _this.getComment(comment.id).then(function (data) {
+                                    container.push(data);
+                                    resolve();
+                                }).catch(reject)
+                            });
+                        })
+                    })(comment)
+                }
+            }
             chain.then(function () {
                 resolve(container);
             }).catch(reject)
@@ -349,7 +361,6 @@ var FbScraper = function (config) {
             }
 
             comments[i] = _this.applyLanguageFilters(comments[i]);
-            // console.log(comments[i].message);
             if (null != comments[i]) {
                 messages.push(comments[i].message)
             }

@@ -97,12 +97,17 @@ var Iterator = function (callback) {
         }).then(function (nextUrl) {
             return fbScraper.getPageFeedRecursive(nextUrl, maxIter);
         }).then(function (response) {
-            var fragments = response.next_url.split("access_token=");
-            var query = fragments[1].split("&");
-            query[0] = "{ACCESS_TOKEN}";
-            query = query.join("&");
-            fragments[1] = query;
-            scraperLog.next_url = fragments.join("access_token=");
+            if( response.next_url != null ){
+                var fragments = response.next_url.split("access_token=");
+                var query = fragments[1].split("&");
+                query[0] = "{ACCESS_TOKEN}";
+                query = query.join("&");
+                fragments[1] = query;
+                scraperLog.next_url = fragments.join("access_token=");
+            }else{
+                scraperLog.next_url = "FINISHED";
+            }
+
 
             response.data.map(function (post) {
                 posts.push({
@@ -194,7 +199,7 @@ var Iterator = function (callback) {
             posts.map(function (post) {
                 postsChain = postsChain.then(function () {
                     return new Promise(function (resolve, reject) {
-                        return fbScraper.getPostCommentsRecursive(post.post_id, 400).then(function (response) {
+                        return fbScraper.getPostCommentsRecursive(post.post_id, 5).then(function (response) {
                             return fbScraper.enrichComments(response.data);
                         }).then(fbScraper.filterComments).then(function (dd) {
                             post.comments = dd.filter(function (comment) {
@@ -210,6 +215,14 @@ var Iterator = function (callback) {
         }).then(function () {
             _this.callback(pageName, "getComments");
         }).catch(function (err) {
+
+            if(err.error.code == 100){
+                var badId = (err.error.message.split("\'"))[1];
+                postController.remove({post_id: [badId]}).then(function (res) {
+                    console.log(colors.FgRed + "Post with post_id", badId, "has been deleted" + colors.Reset);
+                }).catch(console.log)
+            }
+
             errors.getComments++;
             console.log(colors.FgYellow + "Warning: getComment promise failed to resolve in commentsIterator" + colors.Reset);
             if (errors.getComments < errors.getCommentsLimit) {
