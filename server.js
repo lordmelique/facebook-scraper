@@ -216,7 +216,7 @@ var Iterator = function (callback) {
             _this.callback(pageName, "getComments");
         }).catch(function (err) {
             console.log(err);
-            if(err.error.code == 100){
+            if(err && err.error && err.error.code == 100){
                 var badId = (err.error.message.split("\'"))[1];
                 postController.remove({post_id: [badId]}).then(function (res) {
                     console.log(colors.FgRed + "Post with post_id", badId, "has been deleted" + colors.Reset);
