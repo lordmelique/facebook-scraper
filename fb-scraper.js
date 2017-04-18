@@ -367,8 +367,6 @@ var FbScraper = function (config) {
         var message = comment.message;
         message = message.replace(_this.patterns.emoji, "");
 
-        /* remove smileys */
-        message = message.replace(_this.patterns.smileys, "");
         /* check if comment contains any non english character( by english I mena ASCII ) */
         var test = message.match(/^[\x20-\x7E]+$/g);
         if (null == test) {
@@ -379,15 +377,35 @@ var FbScraper = function (config) {
             message = message.replace(/[\s\n\r\t]((https?:\/\/)|(www.))\S+/g, "");
             /*remove hashtags*/
             message = message.replace(/#\S+/, "")
-            /*trim message*/
-            message = message.trim();
+
             /* add missing fullstop */
             if (message[message.length - 1] != ".") message += ".";
 
             /* sentences should start with words*/
             message = message.replace(/^[\.\,\?\!]+/g, "");
-            comment.message = message;
+
+            message = message.replace(/\s+/g," ");
+
+            /*trim message*/
+            message = message.trim();
+
+            var words = message.split(" ").filter(function (item) {
+                return "" != item;
+            });
+
+            /* remove smileys */
+            message = message.replace(_this.patterns.smileys, "");
+
+
+            if( words.length >= 4 ){
+                comment.message = message;
+            }else{
+                comment.message = null;
+            }
+
         }
+
+
         return comment;
     };
 

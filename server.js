@@ -105,7 +105,6 @@ var Iterator = function (callback) {
             scraperLog.next_url = fragments.join("access_token=");
 
             response.data.map(function (post) {
-                if(!post.message) console.log(post);
                 posts.push({
                     post_id: post.id,
                     post: post.message || "",
@@ -195,10 +194,12 @@ var Iterator = function (callback) {
             posts.map(function (post) {
                 postsChain = postsChain.then(function () {
                     return new Promise(function (resolve, reject) {
-                        return fbScraper.getPostCommentsRecursive(post.post_id).then(function (response) {
+                        return fbScraper.getPostCommentsRecursive(post.post_id, 400).then(function (response) {
                             return fbScraper.enrichComments(response.data);
                         }).then(fbScraper.filterComments).then(function (dd) {
-                            post.comments = dd;
+                            post.comments = dd.filter(function (comment) {
+                                return comment != null;
+                            });
                             post.comments_added = true;
                             return post.save()
                         }).then(resolve).catch(reject);
@@ -263,6 +264,32 @@ var scraper = function () {
 };
 scraper();
 
+
+
+// function fixPosts() {
+//     postController.model.find({comments_added: true, comments: {$gt: []}}).then(function (data) {
+//         data.map(function (data) {
+//             var newComm = [];
+//             data.comments.map(function (comment) {
+//                 comment = comment.replace(/[\s\n\r\t]((https?\/)|(www.))\S+/g, "");
+//                 comment = comment.replace(/\s+/g," ");
+//                 comment = comment.trim();
+//                 var words = comment.split(" ").filter(function (item) {
+//                     return "" != item;
+//                 });
+//
+//                 if( words.length >= 4 ){
+//                     newComm.push(comment);
+//                 }
+//             });
+//             data.comments = newComm;
+//             data.save().then(function (data) {
+//                 console.log(data.post_id);
+//             }).catch(console.log)
+//         })
+//     }).catch(console.log)
+// }
+// fixPosts();
 
 var errors = {
     getPosts: 0,
