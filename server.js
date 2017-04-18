@@ -215,7 +215,7 @@ var Iterator = function (callback) {
         }).then(function () {
             _this.callback(pageName, "getComments");
         }).catch(function (err) {
-
+            console.log(err);
             if(err.error.code == 100){
                 var badId = (err.error.message.split("\'"))[1];
                 postController.remove({post_id: [badId]}).then(function (res) {
